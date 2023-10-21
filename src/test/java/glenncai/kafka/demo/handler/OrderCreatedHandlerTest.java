@@ -1,8 +1,11 @@
 package glenncai.kafka.demo.handler;
 
+import static java.util.UUID.randomUUID;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import glenncai.kafka.demo.message.OrderCreated;
 import glenncai.kafka.demo.service.DispatchService;
+import glenncai.kafka.demo.utils.TestEventData;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -25,7 +28,10 @@ class OrderCreatedHandlerTest {
 
   @Test
   void testListen() {
-    orderCreatedHandlerMock.listen("payload");
-    verify(dispatchServiceMock, times(1)).process("payload");
+    OrderCreated testEvent =
+        TestEventData.buildOrderCreatedEvent(randomUUID(), randomUUID().toString());
+
+    orderCreatedHandlerMock.listen(testEvent);
+    verify(dispatchServiceMock, times(1)).process(testEvent);
   }
 }
