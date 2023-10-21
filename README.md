@@ -2,9 +2,13 @@
 
 This project is a simple example of how to integrate Kafka with Spring Boot.
 
+<br />
+
 ## 📚 Table of Contents
 
 - [Installation](https://github.com/glenncai/spring-boot-kafka-integration#-installation)
+
+<br />
 
 ## 🔧 Installation
 
@@ -14,13 +18,13 @@ Windows:
   then `kafka_xxx-xxx.tgz`.
 - Extract the downloaded file to a directory of your choice.
 - Open a terminal and navigate to the directory where you extracted the file.
-- Configure the `config\server.properties` file by changing the following properties:
+- Configure the `config/server.properties` file by changing the following properties:
   ```properties
   port = 9092
   advertised.host.name = localhost
   log.dirs=path to kafka/kafka-logs
   ```
-- Configure the `config\zookeeper.properties` file by changing the following properties:
+- Configure the `config/zookeeper.properties` file by changing the following properties:
   ```properties
   dataDir=path to kafka/zookeeper-data
   ```
