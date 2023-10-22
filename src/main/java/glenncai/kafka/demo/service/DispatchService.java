@@ -1,5 +1,6 @@
 package glenncai.kafka.demo.service;
 
+import glenncai.kafka.demo.message.DispatchPreparing;
 import glenncai.kafka.demo.message.OrderCreated;
 import glenncai.kafka.demo.message.OrderDispatched;
 import lombok.RequiredArgsConstructor;
@@ -19,9 +20,16 @@ import java.util.concurrent.ExecutionException;
 public class DispatchService {
 
   private static final String ORDER_DISPATCHED_TOPIC = "order.dispatched";
+  private static final String DISPATCH_TRACKING_TOPIC = "dispatch.tracking";
   private final KafkaTemplate<String, Object> kafkaTemplate;
 
   public void process(OrderCreated orderCreated) throws ExecutionException, InterruptedException {
+    DispatchPreparing dispatchPreparing = DispatchPreparing.builder()
+                                                           .orderId(orderCreated.getOrderId())
+                                                           .build();
+    // The call to get() on it makes the send synchronous
+    kafkaTemplate.send(DISPATCH_TRACKING_TOPIC, dispatchPreparing).get();
+
     OrderDispatched orderDispatched = OrderDispatched.builder()
                                                      .orderId(orderCreated.getOrderId())
                                                      .build();
