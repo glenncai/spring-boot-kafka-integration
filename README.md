@@ -53,3 +53,9 @@ Only one instance in a consumer group received the event.
 When we kill the assigned consumer, the other consumer will take over the event.
 
 <img src="assets/images/consumer_failover.png" alt="Consumer failover" />
+
+#### Duplicate Consumption
+
+The same event is consumed by both consumers.
+
+<img src="assets/images/duplicate_consumption.png" alt="Duplicate consumption" />
