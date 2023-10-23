@@ -20,4 +20,8 @@ import java.util.UUID;
 public class OrderDispatched {
 
   UUID orderId;
+
+  UUID processById;
+
+  String notes;
 }

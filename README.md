@@ -7,6 +7,7 @@ This project is a simple example of how to integrate Kafka with Spring Boot.
 ## 📚 Table of Contents
 
 - [Installation](https://github.com/glenncai/spring-boot-kafka-integration#-installation)
+- [Consumer](https://github.com/glenncai/spring-boot-kafka-integration#-consumer)
 
 <br />
 
@@ -36,3 +37,13 @@ Windows:
   ```shell
   bin\windows\kafka-server-start.bat config\server.properties
   ```
+
+<br />
+
+## 📡 Consumer
+
+#### Shared Consumer Group
+
+Only one instance in a consumer group received the event.
+
+<img src="assets/images/shared_consumer_group.png" alt="Shared consumer group" />

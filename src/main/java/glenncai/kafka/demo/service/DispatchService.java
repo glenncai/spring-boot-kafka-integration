@@ -1,12 +1,15 @@
 package glenncai.kafka.demo.service;
 
+import static java.util.UUID.randomUUID;
 import glenncai.kafka.demo.message.DispatchPreparing;
 import glenncai.kafka.demo.message.OrderCreated;
 import glenncai.kafka.demo.message.OrderDispatched;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 
+import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 
 /**
@@ -15,12 +18,14 @@ import java.util.concurrent.ExecutionException;
  * @author Glenn Cai
  * @version 1.0 21/10/2023
  */
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class DispatchService {
 
   private static final String ORDER_DISPATCHED_TOPIC = "order.dispatched";
   private static final String DISPATCH_TRACKING_TOPIC = "dispatch.tracking";
+  private static final UUID APPLICATION_ID = randomUUID();
   private final KafkaTemplate<String, Object> kafkaTemplate;
 
   public void process(OrderCreated orderCreated) throws ExecutionException, InterruptedException {
@@ -32,8 +37,13 @@ public class DispatchService {
 
     OrderDispatched orderDispatched = OrderDispatched.builder()
                                                      .orderId(orderCreated.getOrderId())
+                                                     .processById(APPLICATION_ID)
+                                                     .notes("Dispatched: " + orderCreated.getItem())
                                                      .build();
     // The call to get() on it makes the send synchronous
     kafkaTemplate.send(ORDER_DISPATCHED_TOPIC, orderDispatched).get();
+
+    log.info("Sent message: orderId: {}, processById: {}, notes: {}", orderDispatched.getOrderId(),
+             orderDispatched.getProcessById(), orderDispatched.getNotes());
   }
 }
