@@ -47,3 +47,9 @@ Windows:
 Only one instance in a consumer group received the event.
 
 <img src="assets/images/shared_consumer_group.png" alt="Shared consumer group" />
+
+#### Consumer Failover
+
+When we kill the assigned consumer, the other consumer will take over the event.
+
+<img src="assets/images/consumer_failover.png" alt="Consumer failover" />
