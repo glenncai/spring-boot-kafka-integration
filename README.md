@@ -8,6 +8,7 @@ This project is a simple example of how to integrate Kafka with Spring Boot.
 
 - [Installation](https://github.com/glenncai/spring-boot-kafka-integration#-installation)
 - [Consumer](https://github.com/glenncai/spring-boot-kafka-integration#-consumer)
+- [Keys and Partitions](https://github.com/glenncai/spring-boot-kafka-integration#-keys-and-partitions)
 
 <br />
 
@@ -59,3 +60,15 @@ When we kill the assigned consumer, the other consumer will take over the event.
 The same event is consumed by both consumers.
 
 <img src="assets/images/duplicate_consumption.png" alt="Duplicate consumption" />
+
+<br />
+
+## 🔑 Keys and Partitions
+
+- Topics are composed of 1 or more partitions
+- Messages are written to a partition
+- To guarantee order:
+  - Messages to be on the same partition
+  - Achieved via Message Key
+
+<img src="assets/images/keys_and_partitions.png" alt="Keys and partition" />

@@ -28,12 +28,13 @@ public class DispatchService {
   private static final UUID APPLICATION_ID = randomUUID();
   private final KafkaTemplate<String, Object> kafkaTemplate;
 
-  public void process(OrderCreated orderCreated) throws ExecutionException, InterruptedException {
+  public void process(String key, OrderCreated orderCreated)
+      throws ExecutionException, InterruptedException {
     DispatchPreparing dispatchPreparing = DispatchPreparing.builder()
                                                            .orderId(orderCreated.getOrderId())
                                                            .build();
     // The call to get() on it makes the send synchronous
-    kafkaTemplate.send(DISPATCH_TRACKING_TOPIC, dispatchPreparing).get();
+    kafkaTemplate.send(DISPATCH_TRACKING_TOPIC, key, dispatchPreparing).get();
 
     OrderDispatched orderDispatched = OrderDispatched.builder()
                                                      .orderId(orderCreated.getOrderId())
@@ -41,9 +42,11 @@ public class DispatchService {
                                                      .notes("Dispatched: " + orderCreated.getItem())
                                                      .build();
     // The call to get() on it makes the send synchronous
-    kafkaTemplate.send(ORDER_DISPATCHED_TOPIC, orderDispatched).get();
+    kafkaTemplate.send(ORDER_DISPATCHED_TOPIC, key, orderDispatched).get();
 
-    log.info("Sent message: orderId: {}, processById: {}, notes: {}", orderDispatched.getOrderId(),
+    log.info("Sent message: key: {}, orderId: {}, processById: {}, notes: {}",
+             key,
+             orderDispatched.getOrderId(),
              orderDispatched.getProcessById(), orderDispatched.getNotes());
   }
 }

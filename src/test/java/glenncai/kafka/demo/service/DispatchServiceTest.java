@@ -40,54 +40,64 @@ class DispatchServiceTest {
 
   @Test
   void test_process_producer_success() throws Exception {
-    when(kafkaTemplateMock.send(anyString(), any(DispatchPreparing.class))).thenAnswer(
+    when(kafkaTemplateMock.send(anyString(), anyString(), any(DispatchPreparing.class))).thenAnswer(
         invocation -> CompletableFuture.completedFuture(null));
-    when(kafkaTemplateMock.send(anyString(), any(OrderDispatched.class))).thenAnswer(
+    when(kafkaTemplateMock.send(anyString(), anyString(), any(OrderDispatched.class))).thenAnswer(
         invocation -> CompletableFuture.completedFuture(null));
 
+    String key = randomUUID().toString();
     OrderCreated testEvent =
         TestEventData.buildOrderCreatedEvent(randomUUID(), randomUUID().toString());
 
-    dispatchServiceMock.process(testEvent);
+    dispatchServiceMock.process(key, testEvent);
 
-    verify(kafkaTemplateMock, times(1)).send(eq("dispatch.tracking"), any(DispatchPreparing.class));
-    verify(kafkaTemplateMock, times(1)).send(eq("order.dispatched"), any(OrderDispatched.class));
+    verify(kafkaTemplateMock, times(1)).send(eq("dispatch.tracking"), eq(key),
+                                             any(DispatchPreparing.class));
+    verify(kafkaTemplateMock, times(1)).send(eq("order.dispatched"), eq(key),
+                                             any(OrderDispatched.class));
   }
 
   @Test
   void test_process_dispatch_tracking_failure() {
+    String key = randomUUID().toString();
     OrderCreated testEvent =
         TestEventData.buildOrderCreatedEvent(randomUUID(), randomUUID().toString());
 
     doThrow(new RuntimeException("Dispatch tracking producer failure")).when(kafkaTemplateMock)
                                                                        .send(
                                                                            eq("dispatch.tracking"),
+                                                                           eq(key),
                                                                            any(DispatchPreparing.class));
     Exception exception =
-        assertThrows(RuntimeException.class, () -> dispatchServiceMock.process(testEvent));
+        assertThrows(RuntimeException.class, () -> dispatchServiceMock.process(key, testEvent));
 
-    verify(kafkaTemplateMock, times(1)).send(eq("dispatch.tracking"), any(DispatchPreparing.class));
+    verify(kafkaTemplateMock, times(1)).send(eq("dispatch.tracking"), eq(key),
+                                             any(DispatchPreparing.class));
     verifyNoMoreInteractions(kafkaTemplateMock);
     assertThat(exception.getMessage()).isEqualTo("Dispatch tracking producer failure");
   }
 
   @Test
   void test_process_order_dispatched_failure() {
+    when(kafkaTemplateMock.send(anyString(), anyString(), any(DispatchPreparing.class))).thenAnswer(
+        invocation -> CompletableFuture.completedFuture(null));
+
+    String key = randomUUID().toString();
     OrderCreated testEvent =
         TestEventData.buildOrderCreatedEvent(randomUUID(), randomUUID().toString());
-    when(kafkaTemplateMock.send(anyString(), any(DispatchPreparing.class))).thenAnswer(
-        invocation -> CompletableFuture.completedFuture(null));
 
     doThrow(new RuntimeException("Order dispatched producer failure")).when(kafkaTemplateMock)
                                                                       .send(
                                                                           eq("order.dispatched"),
+                                                                          eq(key),
                                                                           any(OrderDispatched.class));
     Exception exception =
-        assertThrows(RuntimeException.class, () -> dispatchServiceMock.process(testEvent));
+        assertThrows(RuntimeException.class, () -> dispatchServiceMock.process(key, testEvent));
 
-    verify(kafkaTemplateMock, times(1)).send(eq("dispatch.tracking"), any(DispatchPreparing
-                                                                              .class));
-    verify(kafkaTemplateMock, times(1)).send(eq("order.dispatched"), any(OrderDispatched.class));
+    verify(kafkaTemplateMock, times(1)).send(eq("dispatch.tracking"), eq(key), any(DispatchPreparing
+                                                                                       .class));
+    verify(kafkaTemplateMock, times(1)).send(eq("order.dispatched"), eq(key),
+                                             any(OrderDispatched.class));
     assertThat(exception.getMessage()).isEqualTo("Order dispatched producer failure");
   }
 }

@@ -31,26 +31,28 @@ class OrderCreatedHandlerTest {
 
   @Test
   void test_listen_success() throws Exception {
+    String key = randomUUID().toString();
     OrderCreated testEvent =
         TestEventData.buildOrderCreatedEvent(randomUUID(), randomUUID().toString());
 
-    orderCreatedHandlerMock.listen(testEvent);
-    verify(dispatchServiceMock, times(1)).process(testEvent);
+    orderCreatedHandlerMock.listen(0, key, testEvent);
+    verify(dispatchServiceMock, times(1)).process(key, testEvent);
   }
 
   @Test
   void test_listen_service_failure() throws Exception {
+    String key = randomUUID().toString();
     OrderCreated testEvent =
         TestEventData.buildOrderCreatedEvent(randomUUID(), randomUUID().toString());
 
     doThrow(new RuntimeException("Service failure")).when(dispatchServiceMock)
-                                                    .process(testEvent);
+                                                    .process(key, testEvent);
 
     Exception exception = assertThrows(RuntimeException.class, () -> {
-      dispatchServiceMock.process(testEvent);
+      dispatchServiceMock.process(key, testEvent);
     });
 
-    verify(dispatchServiceMock, times(1)).process(testEvent);
+    verify(dispatchServiceMock, times(1)).process(key, testEvent);
     assertThat(exception.getMessage()).isEqualTo("Service failure");
   }
 }
