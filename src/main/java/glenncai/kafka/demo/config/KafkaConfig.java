@@ -18,6 +18,7 @@ import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
 import org.springframework.kafka.core.DefaultKafkaProducerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.core.ProducerFactory;
+import org.springframework.kafka.listener.DeadLetterPublishingRecoverer;
 import org.springframework.kafka.listener.DefaultErrorHandler;
 import org.springframework.kafka.support.serializer.ErrorHandlingDeserializer;
 import org.springframework.kafka.support.serializer.JsonDeserializer;
@@ -39,15 +40,16 @@ import java.util.Map;
 @PropertySource(value = "classpath:application.yml")
 public class KafkaConfig {
 
-  private static final String TRUSTED_PACKAGES = "glenncai.kafka.demo.message";
-
   @Bean
   public ConcurrentKafkaListenerContainerFactory<String, Object> kafkaListenerContainerFactory(
-      ConsumerFactory<String, Object> consumerFactory) {
+      ConsumerFactory<String, Object> consumerFactory,
+      KafkaTemplate<String, Object> kafkaTemplate) {
     ConcurrentKafkaListenerContainerFactory<String, Object> factory =
         new ConcurrentKafkaListenerContainerFactory<>();
     factory.setConsumerFactory(consumerFactory);
-    DefaultErrorHandler defaultErrorHandler = new DefaultErrorHandler(new FixedBackOff(100L, 3L));
+    DefaultErrorHandler defaultErrorHandler =
+        new DefaultErrorHandler(new DeadLetterPublishingRecoverer(kafkaTemplate),
+                                new FixedBackOff(100L, 3L));
     defaultErrorHandler.addRetryableExceptions(RetryableException.class);
     defaultErrorHandler.addNotRetryableExceptions(NotRetryableException.class);
     factory.setCommonErrorHandler(defaultErrorHandler);
