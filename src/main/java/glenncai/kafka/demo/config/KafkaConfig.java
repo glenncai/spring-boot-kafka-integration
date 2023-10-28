@@ -1,5 +1,8 @@
 package glenncai.kafka.demo.config;
 
+import glenncai.kafka.demo.exception.NotRetryableException;
+import glenncai.kafka.demo.exception.RetryableException;
+import glenncai.kafka.demo.message.OrderCreated;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.serialization.StringDeserializer;
@@ -15,9 +18,11 @@ import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
 import org.springframework.kafka.core.DefaultKafkaProducerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.core.ProducerFactory;
+import org.springframework.kafka.listener.DefaultErrorHandler;
 import org.springframework.kafka.support.serializer.ErrorHandlingDeserializer;
 import org.springframework.kafka.support.serializer.JsonDeserializer;
 import org.springframework.kafka.support.serializer.JsonSerializer;
+import org.springframework.util.backoff.FixedBackOff;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.HashMap;
@@ -42,6 +47,10 @@ public class KafkaConfig {
     ConcurrentKafkaListenerContainerFactory<String, Object> factory =
         new ConcurrentKafkaListenerContainerFactory<>();
     factory.setConsumerFactory(consumerFactory);
+    DefaultErrorHandler defaultErrorHandler = new DefaultErrorHandler(new FixedBackOff(100L, 3L));
+    defaultErrorHandler.addRetryableExceptions(RetryableException.class);
+    defaultErrorHandler.addNotRetryableExceptions(NotRetryableException.class);
+    factory.setCommonErrorHandler(defaultErrorHandler);
     return factory;
   }
 
@@ -52,8 +61,8 @@ public class KafkaConfig {
     config.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
     config.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, ErrorHandlingDeserializer.class);
     config.put(ErrorHandlingDeserializer.VALUE_DESERIALIZER_CLASS, JsonDeserializer.class);
+    config.put(JsonDeserializer.VALUE_DEFAULT_TYPE, OrderCreated.class.getCanonicalName());
     config.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
-    config.put(JsonDeserializer.TRUSTED_PACKAGES, TRUSTED_PACKAGES);
 
     return new DefaultKafkaConsumerFactory<>(config);
   }

@@ -1,10 +1,12 @@
 package glenncai.kafka.demo.integration;
 
+import static glenncai.kafka.demo.integration.WiremockUtils.stubWiremock;
 import static java.util.UUID.randomUUID;
 import static org.awaitility.Awaitility.await;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.notNullValue;
+import com.github.tomakehurst.wiremock.stubbing.Scenario;
 import glenncai.kafka.demo.config.KafkaConfig;
 import glenncai.kafka.demo.message.DispatchPreparing;
 import glenncai.kafka.demo.message.OrderCreated;
@@ -15,6 +17,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.cloud.contract.wiremock.AutoConfigureWireMock;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.kafka.annotation.KafkaListener;
@@ -43,6 +46,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 @SpringBootTest(classes = {KafkaConfig.class})
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 @ActiveProfiles("test")
+@AutoConfigureWireMock(port = 0)
 @EmbeddedKafka(controlledShutdown = true)
 class OrderDispatchIntegrationTest {
 
@@ -67,6 +71,8 @@ class OrderDispatchIntegrationTest {
     kafkaTestConsumer.dispatchPreparingCounter.set(0);
     kafkaTestConsumer.orderDispatchedCounter.set(0);
 
+    WiremockUtils.reset();
+
     // Wait until the partitions are assigned
     kafkaListenerEndpointRegistry.getListenerContainers()
                                  .forEach(
@@ -81,7 +87,9 @@ class OrderDispatchIntegrationTest {
   }
 
   @Test
-  void testOrderDispatchFlow() throws Exception {
+  void test_order_dispatch_flow_success() throws Exception {
+    stubWiremock("/api/stock?item=my-item", 200, "true");
+
     String key = randomUUID().toString();
     OrderCreated orderCreated = TestEventData.buildOrderCreatedEvent(randomUUID(), "my-item");
     sendMessage(ORDER_CREATED_TOPIC, key, orderCreated);
@@ -90,6 +98,37 @@ class OrderDispatchIntegrationTest {
            .until(kafkaTestConsumer.dispatchPreparingCounter::get, equalTo(1));
 
     await().atMost(3, TimeUnit.SECONDS).pollDelay(100, TimeUnit.MILLISECONDS)
+           .until(kafkaTestConsumer.orderDispatchedCounter::get, equalTo(1));
+  }
+
+  @Test
+  void test_order_dispatch_flow_notRetryable_error() throws Exception {
+    stubWiremock("api/stock?item=my-item", 400, "Bad request");
+
+    String key = randomUUID().toString();
+    OrderCreated orderCreated = TestEventData.buildOrderCreatedEvent(randomUUID(), "my-item");
+    sendMessage(ORDER_CREATED_TOPIC, key, orderCreated);
+
+    TimeUnit.SECONDS.sleep(3);
+
+    assertThat(kafkaTestConsumer.dispatchPreparingCounter.get(), equalTo(0));
+    assertThat(kafkaTestConsumer.orderDispatchedCounter.get(), equalTo(0));
+  }
+
+  @Test
+  void test_order_dispatch_flow_retry_then_success() throws Exception {
+    stubWiremock("/api/stock?item=my-item", 503, "Service unavailable", "failOnce",
+                 Scenario.STARTED, "succeedNextTime");
+    stubWiremock("/api/stock?item=my-item", 200, "true", "failOnce", "succeedNextTime",
+                 "succeedNextTime");
+
+    String key = randomUUID().toString();
+    OrderCreated orderCreated = TestEventData.buildOrderCreatedEvent(randomUUID(), "my-item");
+    sendMessage(ORDER_CREATED_TOPIC, key, orderCreated);
+
+    await().atMost(3, TimeUnit.SECONDS).pollDelay(100, TimeUnit.MILLISECONDS)
+           .until(kafkaTestConsumer.dispatchPreparingCounter::get, equalTo(1));
+    await().atMost(1, TimeUnit.SECONDS).pollDelay(100, TimeUnit.MILLISECONDS)
            .until(kafkaTestConsumer.orderDispatchedCounter::get, equalTo(1));
   }
 

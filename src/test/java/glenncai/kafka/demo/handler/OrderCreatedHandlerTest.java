@@ -1,11 +1,13 @@
 package glenncai.kafka.demo.handler;
 
 import static java.util.UUID.randomUUID;
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.equalTo;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import glenncai.kafka.demo.exception.NotRetryableException;
 import glenncai.kafka.demo.message.OrderCreated;
 import glenncai.kafka.demo.service.DispatchService;
 import glenncai.kafka.demo.utils.TestEventData;
@@ -48,11 +50,10 @@ class OrderCreatedHandlerTest {
     doThrow(new RuntimeException("Service failure")).when(dispatchServiceMock)
                                                     .process(key, testEvent);
 
-    Exception exception = assertThrows(RuntimeException.class, () -> {
-      dispatchServiceMock.process(key, testEvent);
-    });
+    Exception exception = assertThrows(NotRetryableException.class,
+                                       () -> orderCreatedHandlerMock.listen(0, key, testEvent));
 
+    assertThat(exception.getMessage(), equalTo("java.lang.RuntimeException: Service failure"));
     verify(dispatchServiceMock, times(1)).process(key, testEvent);
-    assertThat(exception.getMessage()).isEqualTo("Service failure");
   }
 }
