@@ -7,6 +7,7 @@ This project is a simple example of how to integrate Kafka with Spring Boot.
 - [Installation](https://github.com/glenncai/spring-boot-kafka-integration#-installation)
 - [Consumer](https://github.com/glenncai/spring-boot-kafka-integration#-consumer)
 - [Keys and Partitions](https://github.com/glenncai/spring-boot-kafka-integration#-keys-and-partitions)
+- [Dead Letter Topic](https://github.com/glenncai/spring-boot-kafka-integration#-dead-letter-topic)
 - [WireMock Standalone](https://github.com/glenncai/spring-boot-kafka-integration#-wiremock-standalone)
 
 ## 🔧 Installation
@@ -65,6 +66,12 @@ The same event is consumed by both consumers.
   - Achieved via Message Key
 
 <img src="assets/images/keys_and_partitions.png" alt="Keys and partition" />
+
+## 📪 Dead Letter Topic
+
+Naming convention: <original.topic>.DLT
+
+<img src="assets/images/dead_letter_topic.png" alt="Dead letter topic" />
 
 ## 📍 WireMock Standalone
 
